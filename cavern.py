@@ -77,9 +77,9 @@ def sign(x):
     # Returns -1 or 1 depending on whether number is positive or negative
     return -1 if x < 0 else 1
 
-####################################################################################
-############ Task B - Input snapshot + edge detection (Command pattern) ############
-####################################################################################
+###########################################################################################################
+############ Task B and C - Input snapshot + edge detection (Command pattern) and Pause Button ############
+###########################################################################################################
 
 @dataclass
 class InputState:
@@ -88,11 +88,13 @@ class InputState:
     jump_pressed: bool   # (edge)
     fire_pressed: bool   # (edge, for “create orb”)
     fire_held: bool      # (level, for “blow further”)
+    pause_pressed: bool      # (edge, for "pause game")
 
 class InputManager:
     def __init__(self):
         self.prev_space = False
         self.prev_up = False
+        self.prev_pause = False
 
     def build(self):
         # read keyboard ONCE per frame
@@ -100,22 +102,26 @@ class InputManager:
         right = keyboard.right
         up = keyboard.up
         space = keyboard.space
+        pause = keyboard.p
 
         # edge detection
         jump_pressed = up and not self.prev_up
         fire_pressed = space and not self.prev_space
         fire_held = space
+        pause_pressed = pause and not self.prev_pause
 
         # save for next frame
         self.prev_up = up
         self.prev_space = space
+        self.prev_pause = pause
 
         return InputState(
             left=left,
             right=right,
             jump_pressed=jump_pressed,
             fire_pressed=fire_pressed,
-            fire_held=fire_held
+            fire_held=fire_held,
+            pause_pressed = pause_pressed
         )
 
 #################################################################
@@ -133,7 +139,6 @@ class App:
         self.current_state = new_state
     
     def update(self):
-        self.current_state.update()
         input_state = self.input.build()   # one time per frame
         self.current_state.update(input_state)
     
@@ -172,7 +177,19 @@ class MenuScreen(GameState):
 
 #Concrete class --> PlayScreen
 class PlayScreen(GameState):
+    def __init__(self, app):
+        super().__init__(app)
+        self.paused = False
+
     def update(self, input_state):
+        # Toggle pause with p (edge)
+        if input_state.pause_pressed:
+            self.paused = not self.paused
+        
+        # If paused, freeze simulation updates
+        if self.paused:
+            return
+
         if self.app.game.player.lives < 0:
             self.app.game.play_sound("over")
             # Switch to game over state
@@ -182,7 +199,13 @@ class PlayScreen(GameState):
     
     def draw(self):
         self.app.game.draw()
-        draw_status()
+
+        if self.paused:
+            # semi-transparent gray overlay
+            overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            overlay.fill((80, 80, 80, 140))   # (R, G, B, Alpha)
+            screen.surface.blit(overlay, (0, 0))
+            draw_status()
 
 # Concrete class --> GameOverScreen
 class GameOverScreen(GameState):
