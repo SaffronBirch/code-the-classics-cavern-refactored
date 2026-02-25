@@ -77,53 +77,6 @@ def sign(x):
     # Returns -1 or 1 depending on whether number is positive or negative
     return -1 if x < 0 else 1
 
-###########################################################################################################
-############ Task B and C - Input snapshot + edge detection (Command pattern) and Pause Button ############
-###########################################################################################################
-
-@dataclass
-class InputState:
-    left: bool
-    right: bool
-    jump_pressed: bool   # (edge)
-    fire_pressed: bool   # (edge, for “create orb”)
-    fire_held: bool      # (level, for “blow further”)
-    pause_pressed: bool      # (edge, for "pause game")
-
-class InputManager:
-    def __init__(self):
-        self.prev_space = False
-        self.prev_up = False
-        self.prev_pause = False
-
-    def build(self):
-        # read keyboard ONCE per frame
-        left = keyboard.left
-        right = keyboard.right
-        up = keyboard.up
-        space = keyboard.space
-        pause = keyboard.p
-
-        # edge detection
-        jump_pressed = up and not self.prev_up
-        fire_pressed = space and not self.prev_space
-        fire_held = space
-        pause_pressed = pause and not self.prev_pause
-
-        # save for next frame
-        self.prev_up = up
-        self.prev_space = space
-        self.prev_pause = pause
-
-        return InputState(
-            left=left,
-            right=right,
-            jump_pressed=jump_pressed,
-            fire_pressed=fire_pressed,
-            fire_held=fire_held,
-            pause_pressed = pause_pressed
-        )
-
 #################################################################
 ############ Task A - Screen Objects (State Pattern) ############
 #################################################################
@@ -222,7 +175,53 @@ class GameOverScreen(GameState):
         # Display "Game Over" image
         screen.blit("over", (0, 0))
 
+###########################################################################################################
+############ Task B and C - Input snapshot + edge detection (Command pattern) and Pause Button ############
+###########################################################################################################
 
+@dataclass
+class InputState:
+    left: bool
+    right: bool
+    jump_pressed: bool   # (edge)
+    fire_pressed: bool   # (edge, for “create orb”)
+    fire_held: bool      # (level, for “blow further”)
+    pause_pressed: bool      # (edge, for "pause game")
+
+class InputManager:
+    def __init__(self):
+        self.prev_space = False
+        self.prev_up = False
+        self.prev_pause = False
+
+    def build(self):
+        # read keyboard ONCE per frame
+        left = keyboard.left
+        right = keyboard.right
+        up = keyboard.up
+        space = keyboard.space
+        pause = keyboard.p
+
+        # edge detection
+        jump_pressed = up and not self.prev_up
+        fire_pressed = space and not self.prev_space
+        fire_held = space
+        pause_pressed = pause and not self.prev_pause
+
+        # save for next frame
+        self.prev_up = up
+        self.prev_space = space
+        self.prev_pause = pause
+
+        return InputState(
+            left=left,
+            right=right,
+            jump_pressed=jump_pressed,
+            fire_pressed=fire_pressed,
+            fire_held=fire_held,
+            pause_pressed = pause_pressed
+        )
+    
 class CollideActor(Actor):
     def __init__(self, pos, anchor=ANCHOR_CENTRE):
         super().__init__("blank", pos, anchor)
@@ -401,7 +400,7 @@ class Fruit(GravityActor):
             # If trapped_enemy_type is 1, it means this fruit came from bursting an orb containing the more dangerous type
             # of enemy. In this case there is a chance of getting an extra help or extra life power up
             # We create a list containing the possible types of fruit, in proportions based on the probability we want
-            # each type of fruit to be chosen
+            # ea\ch type of fruit to be chosen
             types = 10 * [Fruit.APPLE, Fruit.RASPBERRY, Fruit.LEMON]    # Each of these appear in the list 10 times
             types += 9 * [Fruit.EXTRA_HEALTH]                           # This appears 9 times
             types += [Fruit.EXTRA_LIFE]                                 # This only appears once
